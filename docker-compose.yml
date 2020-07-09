@@ -1,0 +1,124 @@
+version: '3'
+services:
+    webapp1:
+        build: docker/app/
+        image: shopping-webapp
+        restart: always
+        environment:
+            RAILS_ENV: production
+            SECRET_KEY_BASE: "helloworldsecretkey"
+            MAIN: 1
+            db_host: mysql-db
+            db_password: ${DB_PASSWORD}
+            db_user: iris-prod
+            db_name: shop
+            db_url: mysql2://iris-prod:${DB_PASSWORD}@mysql-db/shop
+        command: rails server -b 0.0.0.0 -p 3000
+        depends_on: 
+            - mysql-db
+        networks: 
+            - app-db
+            - nginx-app
+        volumes: 
+            - public:/rails-app/public
+        
+    webapp2:
+        image: shopping-webapp
+        restart: always
+        environment:
+            RAILS_ENV: production
+            SECRET_KEY_BASE: "helloworldsecretkey"
+            db_host: mysql-db
+            db_password: ${DB_PASSWORD}
+            db_user: iris-prod
+            db_name: shop
+            db_url: mysql2://iris-prod:${DB_PASSWORD}@mysql-db/shop
+        command: rails server -b 0.0.0.0 -p 3000
+        depends_on: 
+            - mysql-db
+            - webapp1
+        networks: 
+            - app-db
+            - nginx-app
+
+    webapp3:
+        image: shopping-webapp
+        restart: always
+        environment:
+            RAILS_ENV: production
+            SECRET_KEY_BASE: "helloworldsecretkey"
+            db_host: mysql-db
+            db_password: ${DB_PASSWORD}
+            db_user: iris-prod
+            db_name: shop
+            db_url: mysql2://iris-prod:${DB_PASSWORD}@mysql-db/shop
+        command: rails server -b 0.0.0.0 -p 3000
+        depends_on: 
+            - mysql-db
+            - webapp1
+        networks: 
+            - app-db
+            - nginx-app
+
+    mysql-db:
+        image: mysql:5.6.48
+        container_name: mysql-db
+        restart: always
+        command: --default-authentication-plugin=mysql_native_password
+        environment: 
+            MYSQL_RANDOM_ROOT_PASSWORD: 1
+            MYSQL_USER: iris-prod
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_DATABASE: shop
+        volumes: 
+            - dbdata:/var/lib/mysql
+            - dbbackup:/backup/
+        networks: 
+            - app-db
+
+    backup:
+        build: docker/backup/
+        restart: always
+        environment:
+            db_user: iris-prod
+            db_password: ${DB_PASSWORD}
+            db_host: mysql-db
+        depends_on: 
+            - mysql-db
+        networks: 
+            - app-db
+        volumes: 
+            - dbbackup:/backup/
+    
+    adminer:
+        image: adminer
+        ports: 
+            - 8080:8080
+        networks: 
+            - app-db
+    
+    nginx:
+        build: docker/nginx/
+        restart: always
+        volumes: 
+            - public:/public/
+        networks: 
+            - nginx-app
+        ports:
+            - 3000:80
+        depends_on: 
+            - webapp1
+            - webapp2
+            - webapp3
+
+volumes:
+    dbdata:
+    dbbackup:
+    public:
+
+networks:
+    app-db:
+        driver: bridge
+    nginx-app:
+        driver: bridge
+    

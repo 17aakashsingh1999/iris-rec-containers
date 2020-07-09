@@ -1,0 +1,4 @@
+#!/bin/bash
+docker-compose down -v --rmi all --remove-orphans && \
+DB_PASSWORD="letmein123" docker-compose build --parallel && \
+DB_PASSWORD="letmein123" docker-compose up
