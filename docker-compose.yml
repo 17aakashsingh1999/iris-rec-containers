@@ -6,7 +6,7 @@ services:
         restart: always
         environment:
             RAILS_ENV: production
-            SECRET_KEY_BASE: "helloworldsecretkey"
+            SECRET_KEY_BASE: ${SECRET_KEY_BASE}
             MAIN: 1
             db_host: mysql-db
             db_password: ${DB_PASSWORD}
@@ -27,7 +27,7 @@ services:
         restart: always
         environment:
             RAILS_ENV: production
-            SECRET_KEY_BASE: "helloworldsecretkey"
+            SECRET_KEY_BASE: ${SECRET_KEY_BASE}
             db_host: mysql-db
             db_password: ${DB_PASSWORD}
             db_user: iris-prod
@@ -46,7 +46,7 @@ services:
         restart: always
         environment:
             RAILS_ENV: production
-            SECRET_KEY_BASE: "helloworldsecretkey"
+            SECRET_KEY_BASE: ${SECRET_KEY_BASE}
             db_host: mysql-db
             db_password: ${DB_PASSWORD}
             db_user: iris-prod
@@ -75,6 +75,7 @@ services:
             - dbbackup:/backup/
         networks: 
             - app-db
+            - db-backup
 
     backup:
         build: docker/backup/
@@ -86,16 +87,16 @@ services:
         depends_on: 
             - mysql-db
         networks: 
-            - app-db
+            - db-backup
         volumes: 
             - dbbackup:/backup/
     
-    adminer:
-        image: adminer
-        ports: 
-            - 8080:8080
-        networks: 
-            - app-db
+    # adminer:
+    #     image: adminer
+    #     ports: 
+    #         - 8080:8080
+    #     networks: 
+    #         - app-db
     
     nginx:
         build: docker/nginx/
@@ -105,7 +106,7 @@ services:
         networks: 
             - nginx-app
         ports:
-            - 3000:80
+            - 8080:80
         depends_on: 
             - webapp1
             - webapp2
@@ -120,5 +121,7 @@ networks:
     app-db:
         driver: bridge
     nginx-app:
+        driver: bridge
+    db-backup:
         driver: bridge
     
